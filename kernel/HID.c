@@ -194,6 +194,11 @@ s32 HIDOpen( u32 LoaderRequest )
 			u32 DeviceDescLength    = *(vu8*)(HIDHeap+Offset);
 			Offset += (DeviceDescLength+3)&(~3);
 
+			u32 iManufacturer = *(vu8*)(HIDHeap+50);
+			u32 iProduct = *(vu8*)(HIDHeap+51);
+			dbgprintf("HID:iManufacturer:%02X\r\n", iManufacturer);
+			dbgprintf("HID:iProduct:%02X\r\n", iProduct);
+
 			u32 ConfigurationLength = *(vu8*)(HIDHeap+Offset);
 			Offset += (ConfigurationLength+3)&(~3);
 
@@ -266,7 +271,16 @@ s32 HIDOpen( u32 LoaderRequest )
 				ControllerID = DeviceID;
 				bEndpointAddressController = bEndpointAddress;
 
-				if( DeviceVID == 0x054c && DevicePID == 0x0268 )
+				bool dualShock = (DeviceVID == 0x054c && DevicePID == 0x0268);
+				bool genuineDualshock = dualShock && iManufacturer == 0x01 && iProduct == 0x02;
+
+				if ( dualShock && !genuineDualshock ) 
+				{
+					dbgprintf("HID:Third party PS3 Dualshock Controller detected. Some functions like rumble may not work correctly\r\n");
+					MemPacketSize = SS_DATA_LEN;
+					RumbleEnabled = 1;
+				}
+				else if( dualShock )
 				{
 					dbgprintf("HID:PS3 Dualshock Controller detected\r\n");
 					MemPacketSize = SS_DATA_LEN;
@@ -399,7 +413,7 @@ s32 HIDOpen( u32 LoaderRequest )
 				{
 					HID_CTRL->DPAD		= ConfigGetValue( Data, "DPAD", 0 );
 					HID_CTRL->DigitalLR	= ConfigGetValue( Data, "DigitalLR", 0 );
-					HID_CTRL->Polltype	= ConfigGetValue( Data, "Polltype", 0 );
+					HID_CTRL->Polltype	= dualShock && genuineDualshock ? ConfigGetValue( Data, "Polltype", 0 ) : 1;
 					HID_CTRL->MultiIn	= ConfigGetValue( Data, "MultiIn", 0 );
 
 					if( HID_CTRL->MultiIn )
@@ -555,6 +569,8 @@ s32 HIDOpen( u32 LoaderRequest )
 
 					dbgprintf("HID:Config file for VID:%04X PID:%04X loaded\r\n", HID_CTRL->VID, HID_CTRL->PID );
 				}
+
+				RumbleType = dualShock && genuineDualshock ? RumbleType : 1;
 
 				if( HID_CTRL->Polltype == 0 )
 					MemPacketSize = 128;
