@@ -278,7 +278,7 @@ s32 HIDOpen( u32 LoaderRequest )
 				{
 					dbgprintf("HID:Third party PS3 Dualshock Controller detected. Some functions like rumble may not work correctly\r\n");
 					MemPacketSize = SS_DATA_LEN;
-					RumbleEnabled = 1;
+					RumbleEnabled = 0;
 				}
 				else if( dualShock )
 				{
@@ -569,8 +569,6 @@ s32 HIDOpen( u32 LoaderRequest )
 
 					dbgprintf("HID:Config file for VID:%04X PID:%04X loaded\r\n", HID_CTRL->VID, HID_CTRL->PID );
 				}
-
-				RumbleType = dualShock && genuineDualshock ? RumbleType : 1;
 
 				if( HID_CTRL->Polltype == 0 )
 					MemPacketSize = 128;
