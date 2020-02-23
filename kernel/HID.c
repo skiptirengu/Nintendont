@@ -47,6 +47,7 @@ static const u8 ss_led_pattern[8] = {0x0, 0x02, 0x04, 0x08, 0x10, 0x12, 0x14, 0x
 
 static s32 HIDHandle = -1;
 static u32 PS3LedSet = 0;
+static bool dualshockHack = false; 
 static u32 ControllerID  = 0;
 static u32 KeyboardID  = 0;
 static u32 bEndpointAddressController = 0;
@@ -273,6 +274,7 @@ s32 HIDOpen( u32 LoaderRequest )
 
 				bool dualShock = (DeviceVID == 0x054c && DevicePID == 0x0268);
 				bool genuineDualshock = dualShock && iManufacturer == 0x01 && iProduct == 0x02;
+				dualshockHack = dualShock && !genuineDualshock;
 
 				if ( dualShock && !genuineDualshock ) 
 				{
@@ -646,7 +648,12 @@ s32 HIDOpen( u32 LoaderRequest )
 	}
 	else //(re)start reading
 		HIDInterruptMessage(1, kbbuf, 8, bEndpointAddressKeyboard, hidqueue, hidreadkeyboardmsg);
-	
+
+	if (dualshockHack) {
+		PS3LedSet = 1;
+		HIDPS3SetLED(1);
+	}
+
 	return 0;
 }
 
