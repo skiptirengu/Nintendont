@@ -47,7 +47,8 @@ static const u8 ss_led_pattern[8] = {0x0, 0x02, 0x04, 0x08, 0x10, 0x12, 0x14, 0x
 
 static s32 HIDHandle = -1;
 static u32 PS3LedSet = 0;
-static bool dualshockHack = false; 
+static u32 dualshockHack = 0; 
+static u32 dualshockLedHack = 0;
 static u32 ControllerID  = 0;
 static u32 KeyboardID  = 0;
 static u32 bEndpointAddressController = 0;
@@ -281,6 +282,7 @@ s32 HIDOpen( u32 LoaderRequest )
 					dbgprintf("HID:Third party PS3 Dualshock Controller detected. Some functions like rumble may not work correctly\r\n");
 					MemPacketSize = SS_DATA_LEN;
 					RumbleEnabled = 0;
+					HIDPS3SetLED(1);
 				}
 				else if( dualShock )
 				{
@@ -844,6 +846,12 @@ ctrlrumblerepeat:
 
 void HIDIRQRead()
 {
+	if (dualshockHack && !dualshockLedHack) 
+	{
+		HIDPS3SetLED(1);
+		dualshockLedHack = 1;
+	}
+
 	switch( HID_CTRL->MultiIn )
 	{
 		default:
